@@ -10,13 +10,7 @@ pub struct HTTPClient {
 
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct APIError {
-    pub more_info: Option<String>,
-    pub status: Option<i32>,
-    pub message: Option<String>,
-}
-#[derive(Deserialize, Serialize, Debug, Default)]
-pub struct APIResponse {
-    pub errors: Option<Vec<APIError>>,
+    pub status: Option<String>,
     pub message: Option<String>,
 }
 
@@ -26,7 +20,7 @@ macro_rules! make_json_request {
     ($sel:ident, $method:path, $url:expr, $body:ident) => {{
         use reqwest;
         use tracing::error;
-        use $crate::{client::APIResponse, errors::PorkbunnError};
+        use $crate::{client::APIError, errors::PorkbunnError};
 
         tracing::debug!(
             "make_json_request: method = {}, url = {} body = {:?}",
@@ -47,10 +41,10 @@ macro_rules! make_json_request {
             error!("url queried = {}", $url);
             let api_response: serde_json::Value = response.json().await?;
             tracing::debug!("Received api response: {:#?}", api_response);
-            let api_response: APIResponse = serde_json::from_value(api_response).unwrap();
+            let api_response: APIError = serde_json::from_value(api_response).unwrap();
             return Err(PorkbunnError::APIResponseError {
-                errors: api_response.errors.unwrap(),
-                message: api_response.message.unwrap(),
+                status: api_response.status.unwrap_or_default(),
+                message: api_response.message.unwrap_or_default(),
             });
         }
 
@@ -78,7 +72,7 @@ macro_rules! make_request {
             "secretapikey": $sel.api_secret,
         });
         let response: reqwest::Response = $sel.http_client.inner($method, $url)?.json(&body).send().await?;
-        use $crate::client::APIResponse;
+        use $crate::client::APIError;
 
         let status_code = &response.status().as_u16();
         tracing::debug!("Received http status code: {}", status_code);
@@ -87,10 +81,10 @@ macro_rules! make_request {
         if !(*status_code >= 200 && *status_code < 300) {
             let api_response: serde_json::Value = response.json().await?;
             tracing::debug!("Received api response: {:#?}", api_response);
-            let api_response: APIResponse = serde_json::from_value(api_response).unwrap();
+            let api_response: APIError = serde_json::from_value(api_response).unwrap();
             return Err(PorkbunnError::APIResponseError {
-                errors: api_response.errors.unwrap(),
-                message: api_response.message.unwrap(),
+                status: api_response.status.unwrap_or_default(),
+                message: api_response.message.unwrap_or_default(),
             });
         }
 

@@ -2,8 +2,6 @@ use std::io;
 use thiserror::Error;
 use url::ParseError;
 
-use crate::client::APIError;
-
 /// Default Error enum which provides translation between std error to different
 /// error types
 #[derive(Error, Debug)]
@@ -24,9 +22,6 @@ pub enum PorkbunnError {
     #[error("Failed during Serde operation")]
     SerdeError(#[from] serde_json::Error),
 
-    #[error("Failed during parsing APIResponse: {message:?} and errors {errors:?}")]
-    APIResponseError {
-        errors: Vec<APIError>,
-        message: String,
-    },
+    #[error("Failed during parsing APIResponse: {message:?} and status {status:?}")]
+    APIResponseError { status: String, message: String },
 }
