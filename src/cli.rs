@@ -69,6 +69,7 @@ impl std::fmt::Display for RecordType {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Create a new DNS record for a given domain
     CreateRecord {
         /// Time to live
         #[arg(short, long, value_name = "TTL")]
@@ -90,6 +91,8 @@ enum Commands {
         #[arg(short, long, value_name = "IP_ADDRESS")]
         ip_address: String,
     },
+
+    /// Delete a DNS record for a given domain
     DeleteRecord {
         /// Domain
         #[arg(short, long, value_name = "DOMAIN")]
@@ -100,7 +103,7 @@ enum Commands {
         id: u64,
     },
 
-    /// List all domains
+    /// List all domains associated with the account
     ListDomains,
 
     /// List all records for a given domain
@@ -112,8 +115,14 @@ enum Commands {
 }
 
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt::init();
     let cli = Cli::parse();
+
+    if cli.debug > 0 {
+        std::env::set_var("RUST_LOG", "debug");
+    } else {
+        std::env::set_var("RUST_LOG", "info");
+    }
+    tracing_subscriber::fmt::init();
 
     let client = porkbunn_client::PorkbunnClient::new(
         &cli.base_url,
