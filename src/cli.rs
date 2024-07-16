@@ -1,6 +1,7 @@
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 
 use crate::{porkbunn_client, serde_ext::SerdeExt};
+use clap_complete::{generate, Generator, Shell};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -8,6 +9,10 @@ struct Cli {
     /// Turn debugging information on
     #[arg(short, long, action = clap::ArgAction::Count)]
     debug: u8,
+
+    // If provided, outputs the completion file for given shell
+    #[arg(long = "generate", value_enum)]
+    generator: Option<Shell>,
 
     #[command(subcommand)]
     command: Option<Commands>,
@@ -25,10 +30,10 @@ struct Cli {
 
     /// Project where we need to commit file to.
     #[clap(long, short = 'a', env = "API_KEY")]
-    api_key: String,
+    api_key: Option<String>,
 
     #[clap(long, short = 's', env = "SECRET_KEY")]
-    secret_key: String,
+    secret_key: Option<String>,
 }
 
 #[derive(Debug, PartialEq, ValueEnum, Clone)]
@@ -65,6 +70,10 @@ impl std::fmt::Display for RecordType {
         };
         write!(f, "{}", v)
     }
+}
+
+fn print_completions<G: Generator>(gen: G, cmd: &mut clap::Command) {
+    generate(gen, cmd, cmd.get_name().to_string(), &mut std::io::stdout());
 }
 
 #[derive(Subcommand)]
@@ -124,13 +133,20 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     tracing_subscriber::fmt::init();
 
+    if let Some(generator) = cli.generator {
+        print_completions(generator, &mut Cli::command());
+        return Ok(());
+    }
+
+    assert!(cli.api_key.is_some(), "API_KEY is not set");
+    assert!(cli.secret_key.is_some(), "API_KEY is not set");
+
     let client = porkbunn_client::PorkbunnClient::new(
         &cli.base_url,
         &cli.url_version,
-        &cli.api_key,
-        &cli.secret_key,
+        &cli.api_key.unwrap(),
+        &cli.secret_key.unwrap(),
     );
-
     match &cli.command {
         Some(Commands::CreateRecord {
             ttl,
