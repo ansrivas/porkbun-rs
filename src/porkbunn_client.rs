@@ -1,6 +1,3 @@
-use std::vec;
-
-use crate::client::encode_param;
 use crate::client::HTTPClient;
 use crate::errors::PorkbunnError;
 use crate::{make_json_request, make_request};
@@ -18,8 +15,14 @@ pub struct ResponseListDomains {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ResponseCreateRecord {
+    pub id: u64,
     pub status: String,
-    pub id: String,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResponseDeleteRecord {
+    pub status: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -112,12 +115,13 @@ impl PorkbunnClient {
 
     pub async fn create_dns_record(
         &self,
+        domain: &str,
         name: &str,
         record_type: &str,
         ip_address: &str,
         ttl: u32,
     ) -> Result<ResponseCreateRecord, PorkbunnError> {
-        let url = &format!("dns/create/{}", encode_param(name));
+        let url = &format!("dns/create/{}", domain);
         let payload = &serde_json::json!({
             "apikey": self.api_key,
             "secretapikey": self.api_secret,
@@ -127,28 +131,48 @@ impl PorkbunnClient {
             "ttl": ttl,
         });
         let response = make_json_request!(self, reqwest::Method::POST, url, payload)?;
+        #[cfg(feature = "debug")]
+        {
+            let res: serde_json::Value = response.json().await?;
+            tracing::debug!("Response {:?}", res);
+            Ok(serde_json::from_value(res)?)
+        }
+
+        #[cfg(not(feature = "debug"))]
         Ok(response.json().await?)
     }
 
-    pub async fn delete_dns_record(&self) -> Result<(), PorkbunnError> {
-        Ok(())
+    pub async fn delete_dns_record(
+        &self,
+        domain: &str,
+        id: u64,
+    ) -> Result<ResponseDeleteRecord, PorkbunnError> {
+        let url = &format!("dns/delete/{}/{}", domain, id);
+        let response = make_request!(self, reqwest::Method::POST, url)?;
+
+        #[cfg(feature = "debug")]
+        {
+            let res: serde_json::Value = response.json().await?;
+            tracing::debug!("Response {:?}", res);
+            Ok(serde_json::from_value(res)?)
+        }
+
+        #[cfg(not(feature = "debug"))]
+        Ok(response.json().await?)
     }
 
     pub async fn list_domains(&self) -> Result<ResponseListDomains, PorkbunnError> {
         let url = "domain/listAll";
         let response = make_request!(self, reqwest::Method::POST, url)?;
+
+        #[cfg(feature = "debug")]
+        {
+            let res: serde_json::Value = response.json().await?;
+            tracing::debug!("Response {:?}", res);
+            Ok(serde_json::from_value(res)?)
+        }
+
+        #[cfg(not(feature = "debug"))]
         Ok(response.json().await?)
-
-        // make_request!(self, reqwest::Method::POST, url)
-
-        // #[cfg(feature = "debug")]
-        // {
-        //     let res: serde_json::Value = response.json().await?;
-        //     tracing::debug!("Response {:?}", res);
-        //     Ok(serde_json::from_value(res)?)
-        // }
-
-        // #[cfg(not(feature = "debug"))]
-        // Ok(response.json().await?)
     }
 }

@@ -8,7 +8,7 @@ mod serde_ext;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cli::run().await;
+    cli::run().await?;
     Ok(())
 
     // let domain = "ansrivasdev.de".to_string();
