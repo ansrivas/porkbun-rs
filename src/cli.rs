@@ -123,6 +123,21 @@ enum Commands {
     },
 }
 
+fn ensure_input(msg: &str) -> bool {
+    println!("{}", msg);
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    input = input.trim().to_string();
+    if input.to_lowercase() == "y" {
+        return true;
+    } else if input.to_lowercase() == "n" {
+        return false;
+    } else {
+        println!("Invalid input, please enter y or n");
+        ensure_input(msg)
+    }
+}
+
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
@@ -175,7 +190,12 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
         Some(Commands::DeleteRecord { domain, id }) => {
             tracing::debug!("Deleting {} with id {}", domain, id);
-            client.delete_dns_record(domain, *id).await?.pretty_print();
+            if ensure_input("Are you sure you want to delete this record? (y/n)") {
+                client.delete_dns_record(domain, *id).await?.pretty_print();
+            } else {
+                println!("Record not deleted");
+                return Ok(());
+            }
         }
         Some(Commands::ListDomains) => {
             client.list_domains().await?.pretty_print();
