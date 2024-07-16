@@ -127,6 +127,20 @@ enum Commands {
     },
 }
 
+/// Prompts the user for input and returns a boolean value based on the user's response.
+///
+/// This function displays the provided message to the user and waits for their input. If the user
+/// enters "y" (case-insensitive), the function returns `true`. If the user enters "n" (case-insensitive),
+/// the function returns `false`. If the user enters any other value, the function prints an error
+/// message and recursively calls itself to prompt the user again.
+///
+/// # Arguments
+///
+/// * `msg` - The message to display to the user when prompting for input.
+///
+/// # Returns
+///
+/// A boolean value indicating the user's response.
 fn ensure_input(msg: &str) -> bool {
     println!("{}", msg);
     let mut input = String::new();
@@ -142,6 +156,14 @@ fn ensure_input(msg: &str) -> bool {
     }
 }
 
+/// Runs the CLI application.
+///
+/// This function is the entry point for the CLI application. It parses the command-line arguments,
+/// sets up the logging, and then executes the appropriate command based on the user's input.
+///
+/// # Errors
+///
+/// This function can return any error that may occur during the execution of the CLI commands.
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 

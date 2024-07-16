@@ -59,6 +59,7 @@ pub struct Domain {
     pub security_lock: u32,
 }
 
+/// The `PorkbunnClient` struct represents a client for interacting with the Porkbun API.
 pub struct PorkbunnClient {
     http_client: HTTPClient,
     api_key: String,
@@ -66,19 +67,32 @@ pub struct PorkbunnClient {
 }
 
 impl PorkbunnClient {
+    /// Creates a new `PorkbunnClient` instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `base_url` - The base URL of the Porkbun API.
+    /// * `version` - The version of the Porkbun API.
+    /// * `api_key` - The API key for authentication.
+    /// * `api_secret` - The API secret for authentication.
+    ///
+    /// # Returns
+    ///
+    /// A new `PorkbunnClient` instance.
     fn inner_client(
         base_url: &str,
         version: &str,
         api_key: &str,
         api_secret: &str,
     ) -> PorkbunnClient {
+        // Create headers with content-type set to application/json
         let mut headers = reqwest::header::HeaderMap::new();
         headers.insert(
             "content-type",
             HeaderValue::from_str("application/json").unwrap(),
         );
 
-        // We are unwrapping here only because we want it to fail early
+        // Build the HTTP client with default headers
         let client = reqwest::ClientBuilder::new()
             .default_headers(headers)
             .build()
@@ -91,10 +105,31 @@ impl PorkbunnClient {
         }
     }
 
+    /// Creates a new `PorkbunnClient` instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `base_url` - The base URL of the Porkbun API.
+    /// * `version` - The version of the Porkbun API.
+    /// * `api_key` - The API key for authentication.
+    /// * `api_secret` - The API secret for authentication.
+    ///
+    /// # Returns
+    ///
+    /// A new `PorkbunnClient` instance.
     pub fn new(base_url: &str, version: &str, api_key: &str, api_secret: &str) -> PorkbunnClient {
         PorkbunnClient::inner_client(base_url, version, api_key, api_secret)
     }
 
+    /// Retrieves a list of DNS records for a given name.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the DNS records to retrieve.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the response data or an error of type `PorkbunnError`.
     pub async fn list_dns_records(
         &self,
         name: &str,
@@ -103,6 +138,19 @@ impl PorkbunnClient {
         make_request!(self, reqwest::Method::POST, url)
     }
 
+    /// Creates a new DNS record.
+    ///
+    /// # Arguments
+    ///
+    /// * `domain` - The domain for which to create the DNS record.
+    /// * `name` - The name of the DNS record.
+    /// * `record_type` - The type of the DNS record.
+    /// * `ip_address` - The IP address associated with the DNS record.
+    /// * `ttl` - The time-to-live value for the DNS record.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the response data or an error of type `PorkbunnError`.
     pub async fn create_dns_record(
         &self,
         domain: &str,
@@ -123,6 +171,16 @@ impl PorkbunnClient {
         make_json_request!(self, reqwest::Method::POST, url, payload)
     }
 
+    /// Deletes a DNS record.
+    ///
+    /// # Arguments
+    ///
+    /// * `domain` - The domain for which to delete the DNS record.
+    /// * `id` - The ID of the DNS record to delete.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the response data or an error of type `PorkbunnError`.
     pub async fn delete_dns_record(
         &self,
         domain: &str,
@@ -132,6 +190,11 @@ impl PorkbunnClient {
         make_request!(self, reqwest::Method::POST, url)
     }
 
+    /// Retrieves a list of all domains.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing the response data or an error of type `PorkbunnError`.
     pub async fn list_domains(&self) -> Result<ResponseListDomains, PorkbunnError> {
         let url = "domain/listAll";
         make_request!(self, reqwest::Method::POST, url)
