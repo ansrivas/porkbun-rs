@@ -1,5 +1,5 @@
 [package]
-name = "porkbun-rs-v2"
+name = "porkbun-rs"
 version = "0.1.0"
 edition = "2021"
 
