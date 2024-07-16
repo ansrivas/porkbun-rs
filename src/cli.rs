@@ -110,6 +110,10 @@ enum Commands {
         /// ID of the record
         #[arg(short, long, value_name = "ID")]
         id: u64,
+
+        /// Skip confirmation prompt
+        #[arg(short, long)]
+        skip_confirm: bool,
     },
 
     /// List all domains associated with the account
@@ -188,8 +192,17 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
                 .await?
                 .pretty_print();
         }
-        Some(Commands::DeleteRecord { domain, id }) => {
+        Some(Commands::DeleteRecord {
+            domain,
+            id,
+            skip_confirm,
+        }) => {
             tracing::debug!("Deleting {} with id {}", domain, id);
+            if *skip_confirm {
+                client.delete_dns_record(domain, *id).await?.pretty_print();
+                return Ok(());
+            }
+
             if ensure_input("Are you sure you want to delete this record? (y/n)") {
                 client.delete_dns_record(domain, *id).await?.pretty_print();
             } else {
