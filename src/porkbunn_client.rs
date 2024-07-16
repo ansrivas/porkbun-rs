@@ -100,17 +100,7 @@ impl PorkbunnClient {
         name: &str,
     ) -> Result<ResponseListDnsRecords, PorkbunnError> {
         let url = &format!("dns/retrieve/{}", name);
-        let response = make_request!(self, reqwest::Method::POST, url)?;
-
-        #[cfg(feature = "debug")]
-        {
-            let res: serde_json::Value = response.json().await?;
-            tracing::debug!("Response {:?}", res);
-            Ok(serde_json::from_value(res)?)
-        }
-
-        #[cfg(not(feature = "debug"))]
-        Ok(response.json().await?)
+        make_request!(self, reqwest::Method::POST, url)
     }
 
     pub async fn create_dns_record(
@@ -130,16 +120,7 @@ impl PorkbunnClient {
             "content": ip_address,
             "ttl": ttl,
         });
-        let response = make_json_request!(self, reqwest::Method::POST, url, payload)?;
-        #[cfg(feature = "debug")]
-        {
-            let res: serde_json::Value = response.json().await?;
-            tracing::debug!("Response {:?}", res);
-            Ok(serde_json::from_value(res)?)
-        }
-
-        #[cfg(not(feature = "debug"))]
-        Ok(response.json().await?)
+        make_json_request!(self, reqwest::Method::POST, url, payload)
     }
 
     pub async fn delete_dns_record(
@@ -148,31 +129,11 @@ impl PorkbunnClient {
         id: u64,
     ) -> Result<ResponseDeleteRecord, PorkbunnError> {
         let url = &format!("dns/delete/{}/{}", domain, id);
-        let response = make_request!(self, reqwest::Method::POST, url)?;
-
-        #[cfg(feature = "debug")]
-        {
-            let res: serde_json::Value = response.json().await?;
-            tracing::debug!("Response {:?}", res);
-            Ok(serde_json::from_value(res)?)
-        }
-
-        #[cfg(not(feature = "debug"))]
-        Ok(response.json().await?)
+        make_request!(self, reqwest::Method::POST, url)
     }
 
     pub async fn list_domains(&self) -> Result<ResponseListDomains, PorkbunnError> {
         let url = "domain/listAll";
-        let response = make_request!(self, reqwest::Method::POST, url)?;
-
-        #[cfg(feature = "debug")]
-        {
-            let res: serde_json::Value = response.json().await?;
-            tracing::debug!("Response {:?}", res);
-            Ok(serde_json::from_value(res)?)
-        }
-
-        #[cfg(not(feature = "debug"))]
-        Ok(response.json().await?)
+        make_request!(self, reqwest::Method::POST, url)
     }
 }
