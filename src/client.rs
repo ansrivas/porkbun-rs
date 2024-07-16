@@ -1,8 +1,6 @@
 use crate::errors::PorkbunnError;
-use percent_encoding::percent_encode;
-use percent_encoding::NON_ALPHANUMERIC;
+use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use serde::{Deserialize, Serialize};
-use url::ParseError;
 
 #[derive(Debug, Clone)]
 pub struct HTTPClient {

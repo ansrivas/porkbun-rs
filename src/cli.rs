@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 
-use crate::porkbunn_client;
+use crate::{porkbunn_client, serde_ext::SerdeExt};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -95,13 +95,7 @@ impl RecordType {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// does testing things
-    Test {
-        /// lists test values
-        #[arg(short, long)]
-        list: bool,
-    },
-    Register {
+    CreateRecord {
         /// Time to live
         #[arg(short, long, value_name = "TTL")]
         ttl: u32,
@@ -110,11 +104,15 @@ enum Commands {
         #[arg(short, long, value_name = "RECORD_TYPE", value_enum)]
         record_type: RecordType,
 
-        /// Domain
+        /// Name for e.g. `index`` if the expected dns record is for index.example.com and example.com is the domain
         #[arg(short, long, value_name = "DOMAIN")]
         domain: String,
+
+        /// IP address for the DNS record
+        #[arg(short, long, value_name = "IP_ADDRESS")]
+        ip_address: String,
     },
-    Delete {
+    DeleteRecord {
         /// Domain
         #[arg(short, long, value_name = "DOMAIN")]
         domain: String,
@@ -135,7 +133,7 @@ enum Commands {
     },
 }
 
-pub async fn run() {
+pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
     let cli = Cli::parse();
 
@@ -163,44 +161,43 @@ pub async fn run() {
         &cli.api_key,
         &cli.secret_key,
     );
-    // You can check for the existence of subcommands, and if found use their
-    // matches just as you would the top level cmd
-    let resp = match &cli.command {
-        Some(Commands::Test { list }) => {
-            if *list {
-                println!("Printing testing lists...");
-            } else {
-                println!("Not printing testing lists...");
-            }
-        }
-        Some(Commands::Register {
+
+    match &cli.command {
+        Some(Commands::CreateRecord {
             ttl,
             record_type,
             domain,
+            ip_address,
         }) => {
-            println!(
+            tracing::debug!(
                 "Registering {} with ttl {} and record type {}",
                 domain,
                 ttl,
                 record_type.to_string()
             );
+            client
+                .create_dns_record(
+                    domain,
+                    &record_type.to_string().to_uppercase(),
+                    &ip_address,
+                    *ttl,
+                )
+                .await?
+                .pretty_print();
         }
-        Some(Commands::Delete { domain, id }) => {
+        Some(Commands::DeleteRecord { domain, id }) => {
             println!("Deleting {} with id {}", domain, id);
         }
         Some(Commands::ListDomains) => {
-            let resp = client.list_domains().await.unwrap();
-            println!("{}", serde_json::to_string_pretty(&resp).unwrap());
+            client.list_domains().await?.pretty_print();
         }
         Some(Commands::ListRecords { domain }) => {
-            let resp = client.list_dns_records(domain).await.unwrap();
-            println!("{}", serde_json::to_string_pretty(&resp).unwrap());
+            client.list_dns_records(domain).await?.pretty_print();
         }
         None => {
             // print help and exit
-            Cli::command().print_help();
+            let _ = Cli::command().print_help();
         }
     };
-
-    // Continued program logic goes here...
+    Ok(())
 }

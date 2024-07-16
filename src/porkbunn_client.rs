@@ -114,8 +114,8 @@ impl PorkbunnClient {
         &self,
         name: &str,
         record_type: &str,
-        content: &str,
-        ttl: i64,
+        ip_address: &str,
+        ttl: u32,
     ) -> Result<ResponseCreateRecord, PorkbunnError> {
         let url = &format!("dns/create/{}", encode_param(name));
         let payload = &serde_json::json!({
@@ -123,7 +123,7 @@ impl PorkbunnClient {
             "secretapikey": self.api_secret,
             "name": name,
             "type": record_type,
-            "content": content,
+            "content": ip_address,
             "ttl": ttl,
         });
         let response = make_json_request!(self, reqwest::Method::POST, url, payload)?;
