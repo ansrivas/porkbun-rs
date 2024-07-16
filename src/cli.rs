@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 
 use crate::{porkbunn_client, serde_ext::SerdeExt};
@@ -7,13 +5,6 @@ use crate::{porkbunn_client, serde_ext::SerdeExt};
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
-    /// Optional name to operate on
-    name: Option<String>,
-
-    /// Sets a custom config file
-    #[arg(short, long, value_name = "FILE")]
-    config: Option<PathBuf>,
-
     /// Turn debugging information on
     #[arg(short, long, action = clap::ArgAction::Count)]
     debug: u8,
@@ -43,53 +34,36 @@ struct Cli {
 #[derive(Debug, PartialEq, ValueEnum, Clone)]
 enum RecordType {
     A,
-    MX,
-    CNAME,
-    ALIAS,
-    TXT,
-    NS,
-    AAAA,
-    SRV,
-    TLSA,
-    CAA,
-    HTTPS,
-    SVCB,
+    Mx,
+    Cname,
+    Alias,
+    Txt,
+    Ns,
+    Aaaa,
+    Srv,
+    Tlsa,
+    Caa,
+    Https,
+    Svcb,
 }
 
-impl RecordType {
-    fn to_string(&self) -> String {
-        match self {
+impl std::fmt::Display for RecordType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let v = match self {
             RecordType::A => "A".to_string(),
-            RecordType::MX => "MX".to_string(),
-            RecordType::CNAME => "CNAME".to_string(),
-            RecordType::ALIAS => "ALIAS".to_string(),
-            RecordType::TXT => "TXT".to_string(),
-            RecordType::NS => "NS".to_string(),
-            RecordType::AAAA => "AAAA".to_string(),
-            RecordType::SRV => "SRV".to_string(),
-            RecordType::TLSA => "TLSA".to_string(),
-            RecordType::CAA => "CAA".to_string(),
-            RecordType::HTTPS => "HTTPS".to_string(),
-            RecordType::SVCB => "SVCB".to_string(),
-        }
-    }
-
-    fn from_string(s: &str) -> Option<RecordType> {
-        match s {
-            "A" => Some(RecordType::A),
-            "MX" => Some(RecordType::MX),
-            "CNAME" => Some(RecordType::CNAME),
-            "ALIAS" => Some(RecordType::ALIAS),
-            "TXT" => Some(RecordType::TXT),
-            "NS" => Some(RecordType::NS),
-            "AAAA" => Some(RecordType::AAAA),
-            "SRV" => Some(RecordType::SRV),
-            "TLSA" => Some(RecordType::TLSA),
-            "CAA" => Some(RecordType::CAA),
-            "HTTPS" => Some(RecordType::HTTPS),
-            "SVCB" => Some(RecordType::SVCB),
-            _ => None,
-        }
+            RecordType::Mx => "MX".to_string(),
+            RecordType::Cname => "CNAME".to_string(),
+            RecordType::Alias => "ALIAS".to_string(),
+            RecordType::Txt => "TXT".to_string(),
+            RecordType::Ns => "NS".to_string(),
+            RecordType::Aaaa => "AAAA".to_string(),
+            RecordType::Srv => "SRV".to_string(),
+            RecordType::Tlsa => "TLSA".to_string(),
+            RecordType::Caa => "CAA".to_string(),
+            RecordType::Https => "HTTPS".to_string(),
+            RecordType::Svcb => "SVCB".to_string(),
+        };
+        write!(f, "{}", v)
     }
 }
 
@@ -105,6 +79,10 @@ enum Commands {
         record_type: RecordType,
 
         /// Name for e.g. `index`` if the expected dns record is for index.example.com and example.com is the domain
+        #[arg(short, long, value_name = "NAME")]
+        name: String,
+
+        /// Domain for which we are setting the record for e.g. example.com
         #[arg(short, long, value_name = "DOMAIN")]
         domain: String,
 
@@ -117,9 +95,9 @@ enum Commands {
         #[arg(short, long, value_name = "DOMAIN")]
         domain: String,
 
-        /// ID
+        /// ID of the record
         #[arg(short, long, value_name = "ID")]
-        id: String,
+        id: u64,
     },
 
     /// List all domains
@@ -137,24 +115,6 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
     let cli = Cli::parse();
 
-    // You can check the value provided by positional arguments, or option arguments
-    if let Some(name) = cli.name.as_deref() {
-        println!("Value for name: {name}");
-    }
-
-    if let Some(config_path) = cli.config.as_deref() {
-        println!("Value for config: {}", config_path.display());
-    }
-
-    // You can see how many times a particular flag or argument occurred
-    // Note, only flags can have multiple occurrences
-    // match cli.debug {
-    //     0 => println!("Debug mode is off"),
-    //     1 => println!("Debug mode is kind of on"),
-    //     2 => println!("Debug mode is on"),
-    //     _ => println!("Don't be crazy"),
-    // }
-
     let client = porkbunn_client::PorkbunnClient::new(
         &cli.base_url,
         &cli.url_version,
@@ -167,10 +127,12 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
             ttl,
             record_type,
             domain,
+            name,
             ip_address,
         }) => {
             tracing::debug!(
-                "Registering {} with ttl {} and record type {}",
+                "Registering {}.{} with ttl {} and record type {}",
+                name,
                 domain,
                 ttl,
                 record_type.to_string()
@@ -178,15 +140,17 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
             client
                 .create_dns_record(
                     domain,
+                    name,
                     &record_type.to_string().to_uppercase(),
-                    &ip_address,
+                    ip_address,
                     *ttl,
                 )
                 .await?
                 .pretty_print();
         }
         Some(Commands::DeleteRecord { domain, id }) => {
-            println!("Deleting {} with id {}", domain, id);
+            tracing::debug!("Deleting {} with id {}", domain, id);
+            client.delete_dns_record(domain, *id).await?.pretty_print();
         }
         Some(Commands::ListDomains) => {
             client.list_domains().await?.pretty_print();

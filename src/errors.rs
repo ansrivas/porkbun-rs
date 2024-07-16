@@ -8,8 +8,6 @@ use crate::client::APIError;
 /// error types
 #[derive(Error, Debug)]
 pub enum PorkbunnError {
-    // #[error("Failed to get a db-connection from database pool")]
-    // PoolConnError(#[from] PoolError),
     #[error("HTTP Request error")]
     ReqwestError(#[from] reqwest::Error),
 
@@ -22,9 +20,6 @@ pub enum PorkbunnError {
     // },
     #[error("Unsupported method ")]
     UnsupportedMethod,
-
-    #[error("Failed during http request with status_code `{status_code:?}` and text `{text:?}`")]
-    ReqwestErrorWithStatus { status_code: String, text: String },
 
     #[error("Failed during Serde operation")]
     SerdeError(#[from] serde_json::Error),

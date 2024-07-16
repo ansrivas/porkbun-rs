@@ -1,5 +1,4 @@
 use crate::errors::PorkbunnError;
-use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
@@ -21,19 +20,20 @@ pub struct APIResponse {
     pub message: Option<String>,
 }
 
-/// Percent encode an incoming parameter
-pub(crate) fn encode_param(param: &str) -> String {
-    percent_encode(param.as_bytes(), NON_ALPHANUMERIC).to_string()
-}
-
 /// Make a http request by providing a json-body
 #[macro_export]
 macro_rules! make_json_request {
     ($sel:ident, $method:path, $url:expr, $body:ident) => {{
-        use crate::{client::APIResponse, errors::PorkbunnError};
         use reqwest;
         use tracing::error;
+        use $crate::{client::APIResponse, errors::PorkbunnError};
 
+        tracing::debug!(
+            "make_json_request: method = {}, url = {} body = {:?}",
+            stringify!($method),
+            $url,
+            $body
+        );
         let response: reqwest::Response = $sel
             .http_client
             .inner($method, $url)?
@@ -45,7 +45,9 @@ macro_rules! make_json_request {
         if !(*status_code >= 200 && *status_code < 300) {
             error!("status_code = {}", status_code);
             error!("url queried = {}", $url);
-            let api_response: APIResponse = response.json().await?;
+            let api_response: serde_json::Value = response.json().await?;
+            tracing::debug!("Received api response: {:#?}", api_response);
+            let api_response: APIResponse = serde_json::from_value(api_response).unwrap();
             return Err(PorkbunnError::APIResponseError {
                 errors: api_response.errors.unwrap(),
                 message: api_response.message.unwrap(),
@@ -68,7 +70,7 @@ macro_rules! make_request {
             "secretapikey": $sel.api_secret,
         });
         let response: reqwest::Response = $sel.http_client.inner($method, $url)?.json(&body).send().await?;
-        use crate::client::APIResponse;
+        use $crate::client::APIResponse;
 
         let status_code = &response.status().as_u16();
         tracing::debug!("Received http status code: {}", status_code);
@@ -102,7 +104,7 @@ impl HTTPClient {
         let parsed_url =
             reqwest::Url::parse(&base_url.into()).expect("Failed to parse the base_url");
 
-        let ver = format!("{}/", version.into().replace("/", ""));
+        let ver = format!("{}/", version.into().replace('/', ""));
         tracing::debug!("API Version is {}", &ver);
         HTTPClient {
             base_url: parsed_url,
