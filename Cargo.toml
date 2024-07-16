@@ -3,7 +3,18 @@ name = "porkbun-rs-v2"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+debug = []
+
 [dependencies]
-isahc = { version = "1.7.2", features = ["json", "text-decoding"] }
+clap = { version = "4.5.9", features = ["derive", "env"] }
+percent-encoding = "2.3.1"
+reqwest = { version = "0.12.5", features = ["json", "rustls-tls"] }
+serde = { version = "1.0.204", features = ["derive"] }
 serde_json = "1.0.120"
+thiserror = "1.0.62"
+tokio = { version = "1.38.0", features = ["rt-multi-thread", "macros"] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+url = "2.5.2"
 url_encor = "1.0.2"
