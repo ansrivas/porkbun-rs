@@ -1,4 +1,5 @@
-use url_encor::Encoder;
+// #![deny(missing_docs)]
+
 mod cli;
 mod client;
 mod errors;

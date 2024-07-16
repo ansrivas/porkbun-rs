@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 
 use crate::porkbunn_client;
 
@@ -189,16 +189,17 @@ pub async fn run() {
             println!("Deleting {} with id {}", domain, id);
         }
         Some(Commands::ListDomains) => {
-            println!("Listing domains...");
             let resp = client.list_domains().await.unwrap();
             println!("{}", serde_json::to_string_pretty(&resp).unwrap());
         }
         Some(Commands::ListRecords { domain }) => {
-            println!("Listing records for {}", domain);
             let resp = client.list_dns_records(domain).await.unwrap();
             println!("{}", serde_json::to_string_pretty(&resp).unwrap());
         }
-        None => {}
+        None => {
+            // print help and exit
+            Cli::command().print_help();
+        }
     };
 
     // Continued program logic goes here...

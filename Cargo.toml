@@ -9,7 +9,7 @@ debug = []
 [dependencies]
 clap = { version = "4.5.9", features = ["derive", "env"] }
 percent-encoding = "2.3.1"
-reqwest = { version = "0.12.5", features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12.5", features = ["json", "native-tls-vendored"] }
 serde = { version = "1.0.204", features = ["derive"] }
 serde_json = "1.0.120"
 thiserror = "1.0.62"
@@ -17,4 +17,4 @@ tokio = { version = "1.38.0", features = ["rt-multi-thread", "macros"] }
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 url = "2.5.2"
-url_encor = "1.0.2"
+openssl = { version = "0.10", features = ["vendored"] }
