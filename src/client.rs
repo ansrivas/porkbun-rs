@@ -53,8 +53,16 @@ macro_rules! make_json_request {
                 message: api_response.message.unwrap(),
             });
         }
-        let ret: Result<reqwest::Response, PorkbunnError> = Ok(response);
-        ret
+
+        #[cfg(feature = "debug")]
+        {
+            let res: serde_json::Value = response.json().await?;
+            tracing::debug!("Response {:?}", res);
+            Ok(serde_json::from_value(res)?)
+        }
+
+        #[cfg(not(feature = "debug"))]
+        Ok(response.json().await?)
     }};
 }
 
@@ -86,12 +94,15 @@ macro_rules! make_request {
             });
         }
 
+        #[cfg(feature = "debug")]
+        {
+            let res: serde_json::Value = response.json().await?;
+            tracing::debug!("Response {:?}", res);
+            Ok(serde_json::from_value(res)?)
+        }
 
-            let ret: Result<reqwest::Response, PorkbunnError> = Ok(response);
-            ret
-
-
-
+        #[cfg(not(feature = "debug"))]
+        Ok(response.json().await?)
     }};
 }
 
