@@ -28,10 +28,11 @@ struct Cli {
     #[clap(long, short = 'v', env = "BASE_URL_VERSION", default_value = "v3")]
     url_version: String,
 
-    /// Project where we need to commit file to.
+    /// API key for the porkbun API
     #[clap(long, short = 'a', env = "API_KEY")]
     api_key: Option<String>,
 
+    /// Secret key for the porkbun API
     #[clap(long, short = 's', env = "SECRET_KEY")]
     secret_key: Option<String>,
 }
@@ -180,7 +181,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     assert!(cli.api_key.is_some(), "API_KEY is not set");
-    assert!(cli.secret_key.is_some(), "API_KEY is not set");
+    assert!(cli.secret_key.is_some(), "SECRET_KEY is not set");
 
     let client = porkbunn_client::PorkbunnClient::new(
         &cli.base_url,
