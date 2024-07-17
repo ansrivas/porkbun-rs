@@ -1,10 +1,6 @@
 // #![deny(missing_docs)]
 
-mod cli;
-mod client;
-mod errors;
-mod porkbunn_client;
-mod serde_ext;
+use porkbun_rs::cli;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
