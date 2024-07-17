@@ -19,20 +19,23 @@ jobs:
             os: ubuntu-latest
             file_name: porkbun-cli-${{ github.ref_name }}-linux-amd64
             file_ext: .tar.gz
-            flags: '-C target-feature=+crt-static'
+            flags: ''
           - target: x86_64-unknown-linux-musl
             os: ubuntu-latest
             file_name: porkbun-cli-${{ github.ref_name }}-linux-amd64-musl
             file_ext: .tar.gz
+            flags: RUSTFLAGS='-C target-feature=+crt-static'
 
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo check
-
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - name: Build
-        run: RUSTFLAGS=${{ matrix.os }} cargo build --release --target $${{ matrix.target }}
+        run: ${{ matrix.flags }} cargo build --release --target $${{ matrix.target }}
  
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
