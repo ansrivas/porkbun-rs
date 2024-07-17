@@ -42,12 +42,6 @@ jobs:
       - name: Build
         run: ${{ matrix.flags }} cargo build --release --target ${{ matrix.target }}
  
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.file_name }}
-          path: target/${{ matrix.target }}/release/${{ matrix.file_name }}${{ matrix.file_ext }}
-
       - name: Calculate checksum and rename binary
         if: contains(matrix.target, 'windows') == false
         shell: bash
@@ -56,6 +50,12 @@ jobs:
           chmod +x porkbun-rs
           tar -zcvf ${{ matrix.file_name }}.tar.gz porkbun-rs
           echo $(shasum -a 256 ${{ matrix.file_name }}.tar.gz | cut -f1 -d' ') > ${{ matrix.file_name }}.tar.gz.sha256sum
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.file_name }}
+          path: target/${{ matrix.target }}/release/${{ matrix.file_name }}${{ matrix.file_ext }}
           
       - name: Upload checksum of artifacts
         uses: actions/upload-artifact@v4
@@ -75,6 +75,8 @@ jobs:
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
         with:
           name: "Release ${{ github.ref_name }}"
           generate_release_notes: true
