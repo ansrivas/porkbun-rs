@@ -29,6 +29,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - if: ${{ contains(matrix.target, '-musl') }}
+        run: sudo apt-get install musl-tools musl -y 
       - uses: dtolnay/rust-toolchain@stable
         with:
             targets: ${{ matrix.target }}
