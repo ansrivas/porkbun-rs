@@ -35,7 +35,7 @@ jobs:
         with:
           cache-on-failure: true
       - name: Build
-        run: ${{ matrix.flags }} cargo build --release --target $${{ matrix.target }}
+        run: ${{ matrix.flags }} cargo build --release --target ${{ matrix.target }}
  
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
