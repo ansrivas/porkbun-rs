@@ -1,0 +1,74 @@
+name: Rust
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            file_name: porkbun-cli-${{ github.ref_name }}-linux-amd64
+            file_ext: .tar.gz
+            flags: '-C target-feature=+crt-static'
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+            file_name: porkbun-cli-${{ github.ref_name }}-linux-amd64-musl
+            file_ext: .tar.gz
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo check
+
+      - name: Build
+        run: RUSTFLAGS=${{ matrix.os }} cargo build --release --target $${{ matrix.target }}
+ 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.file_name }}
+          path: target/${{ matrix.target }}/release/${{ matrix.file_name }}${{ matrix.file_ext }}
+
+      - name: Calculate checksum and rename binary
+        if: contains(matrix.target, 'windows') == false
+        shell: bash
+        run: |
+          cd target/${{ matrix.target }}/release
+          chmod +x porkbun-rs
+          tar -zcvf ${{ matrix.file_name }}.tar.gz porkbun-rs
+          echo $(shasum -a 256 ${{ matrix.file_name }}.tar.gz | cut -f1 -d' ') > ${{ matrix.file_name }}.tar.gz.sha256sum
+          
+      - name: Upload checksum of artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.file_name }}.sha256sum
+          path: target/${{ matrix.target }}/release/${{ matrix.file_name }}${{ matrix.file_ext }}.sha256sum
+  release:
+    name: Release artifacts
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Release ${{ github.ref_name }}"
+          generate_release_notes: true
+          files: |
+            **/porkbun-rs*
