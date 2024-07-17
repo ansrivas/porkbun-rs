@@ -84,4 +84,4 @@ jobs:
           name: "Release ${{ github.ref_name }}"
           generate_release_notes: true
           files: |
-            **porkbun-rs*
+            **porkbun-cli*
