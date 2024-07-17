@@ -166,6 +166,9 @@ fn ensure_input(msg: &str) -> bool {
 ///
 /// This function can return any error that may occur during the execution of the CLI commands.
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
+    // ensure that .env files are also supported
+    dotenvy::dotenv().ok();
+
     let cli = Cli::parse();
 
     if cli.debug > 0 {
