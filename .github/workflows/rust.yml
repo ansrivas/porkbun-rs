@@ -48,15 +48,15 @@ jobs:
         run: |
           cd target/${{ matrix.target }}/release
           chmod +x porkbun-rs
-          # tar -zcvf ${{ matrix.file_name }}.tar.gz porkbun-rs
+          tar -zcvf ${{ matrix.file_name }}.tar.gz porkbun-rs
           # echo $(shasum -a 256 ${{ matrix.file_name }}.tar.gz | cut -f1 -d' ') > ${{ matrix.file_name }}.tar.gz.sha256sum
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.file_name }}.zip
-          # path: target/${{ matrix.target }}/release/${{ matrix.file_name }}${{ matrix.file_ext }}
-          path: target/${{ matrix.target }}/release/porkbun-rs
+          name: ${{ matrix.file_name }}.tar.gz
+          path: target/${{ matrix.target }}/release/${{ matrix.file_name }}${{ matrix.file_ext }}
+          # path: target/${{ matrix.target }}/release/porkbun-rs
           
       # - name: Upload checksum of artifacts
       #   uses: actions/upload-artifact@v4
