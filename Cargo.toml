@@ -2,6 +2,12 @@
 name = "porkbun-rs"
 version = "0.1.0"
 edition = "2021"
+license = "Apache-2.0"
+authors = ["Ankur Srivastava"]
+description = "A Rust cli and library for Porkbun API"
+repository = "https://github.com/ansrivas/porkbun-rs"
+readme = "README.md"
+
 
 [features]
 debug = []
