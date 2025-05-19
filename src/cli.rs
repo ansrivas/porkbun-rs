@@ -1,7 +1,7 @@
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 
 use crate::{porkbunn_client, serde_ext::SerdeExt};
-use clap_complete::{generate, Generator, Shell};
+use clap_complete::{Generator, Shell, generate};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -73,8 +73,13 @@ impl std::fmt::Display for RecordType {
     }
 }
 
-fn print_completions<G: Generator>(gen: G, cmd: &mut clap::Command) {
-    generate(gen, cmd, cmd.get_name().to_string(), &mut std::io::stdout());
+fn print_completions<G: Generator>(gene: G, cmd: &mut clap::Command) {
+    generate(
+        gene,
+        cmd,
+        cmd.get_name().to_string(),
+        &mut std::io::stdout(),
+    );
 }
 
 #[derive(Subcommand)]
@@ -100,6 +105,10 @@ enum Commands {
         /// IP address for the DNS record
         #[arg(short, long, value_name = "IP_ADDRESS")]
         ip_address: String,
+
+        /// Delete the record if it already exists
+        #[arg(short, long, value_name = "DELETE_EXISTING")]
+        delete_existing: bool,
     },
 
     /// Delete a DNS record for a given domain
@@ -172,9 +181,13 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     if cli.debug > 0 {
-        std::env::set_var("RUST_LOG", "debug");
+        unsafe {
+            std::env::set_var("RUST_LOG", "debug");
+        }
     } else {
-        std::env::set_var("RUST_LOG", "info");
+        unsafe {
+            std::env::set_var("RUST_LOG", "info");
+        }
     }
     tracing_subscriber::fmt::init();
 
@@ -199,6 +212,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
             domain,
             name,
             ip_address,
+            delete_existing,
         }) => {
             tracing::debug!(
                 "Registering {}.{} with ttl {} and record type {}",
@@ -207,6 +221,18 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
                 ttl,
                 record_type.to_string()
             );
+            if *delete_existing {
+                let records = client.list_dns_records(name).await?;
+                for record in records.records {
+                    if record.name == *name && record.type_field == record_type.to_string() {
+                        if let Ok(id) = record.id.parse::<u64>() {
+                            tracing::info!("Deleting existing record with id {}", id);
+                            client.delete_dns_record(domain, id).await?;
+                        }
+                    }
+                }
+            }
+
             client
                 .create_dns_record(
                     domain,
