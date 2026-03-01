@@ -29,11 +29,11 @@ struct Cli {
     url_version: String,
 
     /// API key for the porkbun API
-    #[clap(long, short = 'a', env = "API_KEY")]
+    #[clap(long, short = 'a', env = "PORKBUN_API_KEY")]
     api_key: Option<String>,
 
     /// Secret key for the porkbun API
-    #[clap(long, short = 's', env = "SECRET_KEY")]
+    #[clap(long, short = 's', env = "PORKBUN_SECRET_KEY")]
     secret_key: Option<String>,
 }
 
